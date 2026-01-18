@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('job_opportunities', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->index();
             $table->string('title')->nullable();
             $table->text('description');
             $table->text('generated_cover_letter')->nullable();

@@ -60,12 +60,19 @@
                     minute: '2-digit'
                 });
 
+                const publicUrl = `/letter/${job.uuid}`;
+
                 item.innerHTML = `
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center mb-1">
                         <span class="font-medium text-blue-600">Job #${job.id}</span>
-                        <span class="text-xs text-gray-400">${date}</span>
+                        <div class="flex items-center gap-2">
+                            <a href="${publicUrl}" target="_blank" onclick="event.stopPropagation()" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200" title="Open Public Link">
+                                🔗 Link
+                            </a>
+                            <span class="text-xs text-gray-400">${date}</span>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-600 truncate mt-1">${job.description.substring(0, 60)}...</p>
+                    <p class="text-sm text-gray-600 truncate mt-1">${job.description.substring(0, 50)}...</p>
                 `;
 
                 // Click event: Show this cover letter in the main box

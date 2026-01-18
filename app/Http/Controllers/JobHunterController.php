@@ -114,4 +114,15 @@ class JobHunterController extends Controller
 
         return response()->json($history);
     }
+
+    /**
+     * Public view for recruiters to see the cover letter.
+     */
+    public function showPublic($uuid)
+    {
+        // Find by UUID or show 404 error if not found
+        $job = JobOpportunity::where('uuid', $uuid)->firstOrFail();
+
+        return view('public-letter', ['job' => $job]);
+    }
 }
