@@ -9,3 +9,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('/generate-cover-letter', [JobHunterController::class, 'analyzeJob']);
+
+Route::get('/history', [JobHunterController::class, 'getHistory']);

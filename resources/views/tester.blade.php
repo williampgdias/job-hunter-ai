@@ -23,13 +23,79 @@
             Generate Cover Letter
         </button>
 
+        <div class="mt-8">
+            <h3 class="font-bold text-gray-700 mb-2">Recent History 🕦</h3>
+            <div id="history-list" class="space-y-2">
+                <p class="text-sm text-gray-400">Loading history...</p>
+            </div>
+        </div>
+
         <div id="result" class="mt-6 p-4 bg-gray-50 border rounded hidden">
             <h3 class="font-bold">Result:</h3>
             <div id="output" class="prose prose-slate max-w-none text-gray-700 mt-2 p-6 bg-white rounded border"></div>
         </div>
     </div>
 
+    <!-- JS -->
     <script>
+    // Function to Load History
+    async function loadHistory() {
+        const listDiv = document.getElementById('history-list');
+        try {
+            const response = await fetch('/api/history');
+            const jobs = await response.json();
+
+            listDiv.innerHTML = "";
+
+            jobs.forEach(job => {
+                // Create a clickable card for each job
+                const item = document.createElement('div');
+                item.className = "p-3 bg-white border rounded hover:bg-gray-50 cursor-pointer transition";
+
+                // Formate date nicely
+                const date = new Date(job.created_at).toLocaleDateString('en-IE', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium text-blue-600">Job #${job.id}</span>
+                        <span class="text-xs text-gray-400">${date}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 truncate mt-1">${job.description.substring(0, 60)}...</p>
+                `;
+
+                // Click event: Show this cover letter in the main box
+                item.onclick = () => {
+                    const output = document.getElementById('output');
+                    const resultDiv = document.getElementById('result');
+
+                    // Show hidden box
+                    resultDiv.classList.remove('hidden');
+
+                    // Render Markdown
+                    output.innerHTML = marked.parse(job.generated_cover_letter);
+
+                    // Scroll to result
+                    resultDiv.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                };
+
+                listDiv.appendChild(item);
+            });
+        } catch (error) {
+            console.error("Error loading history:", error);
+        }
+    }
+
+    // Load history immediately when page open
+    loadHistory();
+
+    // Generate Function
     async function generate() {
         const btn = document.querySelector('button');
         const output = document.getElementById('output');
@@ -57,6 +123,7 @@
 
             if (json.data) {
                 output.innerHTML = marked.parse(json.data.cover_letter);
+                loadHistory();
             } else {
                 output.innerText = "Error: " + JSON.stringify(json);
             }

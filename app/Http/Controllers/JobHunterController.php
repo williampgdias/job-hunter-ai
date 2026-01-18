@@ -103,4 +103,15 @@ class JobHunterController extends Controller
             return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Fetch the recent history of generated applications.
+     */
+    public function getHistory()
+    {
+        // Get the last 5 jobs, ordered by newest first
+        $history = JobOpportunity::latest()->take(5)->get();
+
+        return response()->json($history);
+    }
 }
