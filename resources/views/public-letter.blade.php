@@ -74,7 +74,7 @@
         </button>
     </div>
 
-    <main class="flex-grow max-w-3xl mx-auto w-full p-6 md:p-12 print-clean">
+    <main class="grow max-w-3xl mx-auto w-full p-6 md:p-12 print-clean">
         <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-100 print-clean">
             <div class="h-2 bg-blue-600 w-full"></div>
 

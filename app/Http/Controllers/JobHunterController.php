@@ -15,38 +15,29 @@ class JobHunterController extends Controller
     {
         // validate the input
         $request->validate([
-            'job_description' => 'required|string|min:50',
-            'my_resume' => 'required|string|min:50'
+            'job_description' => 'required|string',
+            'my_resume' => 'required|string'
         ]);
 
         $jobDescription = $request->input('job_description');
         $myResume = $request->input('my_resume');
         $apiKey = env('GEMINI_API_KEY');
 
-
-
         // Construct the Prompt for Gemini
-        $systemInstruction = "
-            Role: You are an expert Career Coach and Copywriter.
-            Task: Write a professional, persuasive cover letter.
+        $systemInstruction = "You are an expert Career Coach.
+        Analyze the Job Description and the User's Resume.
 
-            Instructions:
-            1. Analyze the job description provided by the user.
-            2. Match the candidate's skills from the resume provided.
-            3. Write a cover letter in English that highlights why the candidate is the perfect fit.
-            4. Keep the tone professional, enthusiastic, but concise.
-            5. Do NOT invent skills the candidate does not have.
-        ";
+        Return ONLY a raw JSON object (no markdown formatting, no code blocks) with this exact structure:
+        {
+            \"job_title\": \"Extract the job title from description\",
+            \"company_name\": \"Extract company name (or 'Unknown')\",
+            \"cover_letter\": \"The full professional cover letter text (use \\n for line breaks)\"
+        }
 
-        $userMessage = "
-            Here is my resume:
-            {$myResume}
-
-            Here is the Job Description:
-            {$jobDescription}
-
-            Please write my cover letter now.
-        ";
+        Cover Letter Rules:
+        - Be professional, enthusiastic, and concise.
+        - Highlight matching skills from the resume.
+        - Use placeholders like [Date] if needed, but try to fill specific details.";
 
         // Prepare the Payload manually
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
@@ -73,7 +64,7 @@ class JobHunterController extends Controller
             // Se a API retornar erro (ex: 400, 404, 500)
             if ($response->failed()) {
                 return response()->json([
-                    'message' => 'Erro na API do Google',
+                    'message' => 'API Error',
                     'details' => $response->json()
                 ], $response->status());
             }
@@ -82,11 +73,24 @@ class JobHunterController extends Controller
 
             // 5. Extração da resposta
             if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
-                $coverLetter = $result['candidates'][0]['content']['parts'][0]['text'];
+                $rawText = $result['candidates'][0]['content']['parts'][0]['text'];
 
-                // Salvar no Banco
+                // Limpeza: Às vezes o Gemini manda ```json ... ```. Vamos limpar isso.
+                $cleanJson = str_replace(['```json', '```'], '', $rawText);
+                $data = json_decode($cleanJson, true);
+
+                // Fallback: Se o JSON falhar, usa o texto puro como carta e um título genérico
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $coverLetter = $rawText;
+                    $title = 'Job Opportunity (Review Title)';
+                } else {
+                    $coverLetter = $data['cover_letter'] ?? $rawText;
+                    $title = ($data['job_title'] ?? 'Job') . ' @ ' . ($data['company_name'] ?? 'Company');
+                }
+
+                // Salvar no Banco com o Título certo!
                 $job = JobOpportunity::create([
-                    'title' => 'Job Application',
+                    'title' => substr($title, 0, 250), // Limita tamanho pra não dar erro
                     'description' => $jobDescription,
                     'generated_cover_letter' => $coverLetter,
                     'status' => 'generated'
@@ -94,7 +98,10 @@ class JobHunterController extends Controller
 
                 return response()->json([
                     'message' => 'Success!',
-                    'data' => ['cover_letter' => $coverLetter]
+                    'data' => [
+                        'job_id' => $job->id,
+                        'cover_letter' => $coverLetter
+                    ]
                 ]);
             } else {
                 return response()->json(['error' => 'Formato inesperado', 'raw' => $result], 500);

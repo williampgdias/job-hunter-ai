@@ -64,7 +64,7 @@
 
                 item.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
-                        <span class="font-medium text-blue-600">Job #${job.id}</span>
+                        <span class="font-medium text-blue-600 truncate max-w-[200px] block" title="${job.title}">${job.title ? job.title : 'Job #' + job.id}</span>
                         <div class="flex items-center gap-2">
                             <a href="${publicUrl}" target="_blank" onclick="event.stopPropagation()" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200" title="Open Public Link">
                                 🔗 Link
